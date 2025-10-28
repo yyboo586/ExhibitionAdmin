@@ -9,9 +9,12 @@ package controller
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/gogf/gf/v2/crypto/gmd5"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gctx"
 	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -125,4 +128,70 @@ func (c *loginController) Login(ctx context.Context, req *system.UserLoginReq) (
 func (c *loginController) LoginOut(ctx context.Context, req *system.UserLoginOutReq) (res *system.UserLoginOutRes, err error) {
 	_ = service.GfToken().RemoveToken(ctx, service.GfToken().GetRequestToken(g.RequestFromCtx(ctx)))
 	return
+}
+
+func (c *loginController) Login2(ctx context.Context, req *system.UserLogin2Req) (res *system.UserLogin2Res, err error) {
+	var (
+		userInfo   *model.LoginUserRes
+		token      string
+		settleInfo *model.SettleInfo
+	)
+	userInfo, err = service.SysUser().Login2(ctx, req)
+	if err != nil {
+		return
+	}
+
+	settleInfo, err = service.ThirdService().GetSettleInfo(ctx, int64(userInfo.Id), userInfo.UserType)
+	if err != nil {
+		return
+	}
+
+	ip := libUtils.GetClientIp(ctx)
+	userAgent := libUtils.GetUserAgent(ctx)
+	key := gconv.String(userInfo.Id) + "-" + gmd5.MustEncryptString(userInfo.UserName)
+	if g.Cfg().MustGet(ctx, "gfToken.multiLogin").Bool() {
+		key = gconv.String(userInfo.Id) + "-" + gmd5.MustEncryptString(userInfo.UserName) + gmd5.MustEncryptString(ip+userAgent)
+	}
+	token, err = service.GfToken().GenerateToken(ctx, key, userInfo)
+	if err != nil {
+		return nil, gerror.Wrap(err, "登录失败，后端服务出现错误")
+	}
+
+	res = &system.UserLogin2Res{
+		UserInfo: &system.UserInfo2{
+			UserID:   fmt.Sprintf("%d", userInfo.Id),
+			IUQTID:   userInfo.IUQTID,
+			UserName: userInfo.UserName,
+			Mobile:   userInfo.Mobile,
+			UserType: model.GetUserTypeText(userInfo.UserType),
+		},
+		SettleInfo: settleInfo,
+		Token:      token,
+	}
+
+	return res, nil
+}
+
+func (c *loginController) TokenInspect(ctx context.Context, req *system.TokenIntrospectReq) (res *system.TokenIntrospectRes, err error) {
+	// 初始化登录用户信息
+	data, err := service.GfToken().ParseToken(ghttp.RequestFromCtx(ctx))
+	if err != nil {
+		return nil, gerror.Wrap(err, "解析令牌失败")
+	}
+
+	var userInfo model.LoginUserRes
+	err = gconv.Struct(data.Data, &userInfo)
+	if err != nil {
+		return nil, gerror.Wrap(err, "解析令牌失败")
+	}
+
+	res = &system.TokenIntrospectRes{}
+	res.UserInfo2 = system.UserInfo2{
+		UserID:   fmt.Sprintf("%d", userInfo.Id),
+		IUQTID:   userInfo.IUQTID,
+		UserName: userInfo.UserName,
+		Mobile:   userInfo.Mobile,
+		UserType: model.GetUserTypeText(userInfo.UserType),
+	}
+	return res, nil
 }

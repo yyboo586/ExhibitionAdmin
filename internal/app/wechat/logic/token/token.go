@@ -10,15 +10,15 @@ package token
 import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gctx"
-	"github.com/tiger1103/gfast-token/gftoken"
 	"github.com/tiger1103/gfast/v3/internal/app/common/consts"
 	commonModel "github.com/tiger1103/gfast/v3/internal/app/common/model"
 	"github.com/tiger1103/gfast/v3/internal/app/wechat/service"
 	"github.com/tiger1103/gfast/v3/library/liberr"
+	"github.com/yyboo586/common/authUtils/tokenUtils"
 )
 
 type sToken struct {
-	*gftoken.GfToken
+	*tokenUtils.Token
 }
 
 func New() service.IGfToken {
@@ -26,21 +26,21 @@ func New() service.IGfToken {
 		ctx = gctx.New()
 		opt *commonModel.TokenOptions
 		err = g.Cfg("wechat").MustGet(ctx, "gfToken").Struct(&opt)
-		fun gftoken.OptionFunc
+		fun tokenUtils.OptionFunc
 	)
 	liberr.ErrIsNil(ctx, err)
 	if opt.CacheModel == consts.CacheModelRedis {
-		fun = gftoken.WithGRedis()
+		fun = tokenUtils.WithGRedis()
 	} else {
-		fun = gftoken.WithGCache()
+		fun = tokenUtils.WithGCache()
 	}
 	return &sToken{
-		GfToken: gftoken.NewGfToken(
-			gftoken.WithCacheKey(opt.CacheKey),
-			gftoken.WithTimeout(opt.Timeout),
-			gftoken.WithMaxRefresh(opt.MaxRefresh),
-			gftoken.WithMultiLogin(opt.MultiLogin),
-			gftoken.WithExcludePaths(opt.ExcludePaths),
+		Token: tokenUtils.NewToken(
+			tokenUtils.WithCacheKey(opt.CacheKey),
+			tokenUtils.WithTimeout(opt.Timeout),
+			tokenUtils.WithMaxRefresh(opt.MaxRefresh),
+			tokenUtils.WithMultiLogin(opt.MultiLogin),
+			tokenUtils.WithExcludePaths(opt.ExcludePaths),
 			fun,
 		),
 	}

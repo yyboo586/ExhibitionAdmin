@@ -36,3 +36,35 @@ type UserLoginOutReq struct {
 
 type UserLoginOutRes struct {
 }
+
+type UserLogin2Req struct {
+	g.Meta    `path:"/login2" tags:"系统后台/登录" method:"post" summary:"用户登录2"`
+	Phone     string `p:"phone" dc:"手机号"`
+	Code      string `p:"code" dc:"验证码"`
+	LoginType int    `p:"loginType" v:"required#登录类型不能为空" dc:"1:手机号+密码 2:手机号+验证码 3:IUQT SSO"`
+}
+
+type UserLogin2Res struct {
+	g.Meta     `mime:"application/json"`
+	Token      string            `json:"token"`
+	UserInfo   *UserInfo2        `json:"user_info"`
+	SettleInfo *model.SettleInfo `json:"settle_status" dc:"入驻状态(未入驻、审核中、已入驻)"`
+}
+
+type UserInfo2 struct {
+	UserID   string `json:"user_id"`
+	IUQTID   string `json:"iuqt_id"`
+	UserName string `json:"user_name"`
+	Mobile   string `json:"mobile"`
+	UserType string `json:"user_type"`
+}
+
+type TokenIntrospectReq struct {
+	g.Meta `path:"/token/introspect" tags:"系统后台/登录" method:"post" summary:"令牌内省"`
+	commonApi.Author
+}
+
+type TokenIntrospectRes struct {
+	g.Meta `mime:"application/json"`
+	UserInfo2
+}

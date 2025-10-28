@@ -14,6 +14,10 @@
  Date: 20/11/2024 09:08:37
 */
 
+CREATE DATABASE IF NOT EXISTS `exhibition-admin` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+USE `exhibition-admin`;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -5109,12 +5113,18 @@ CREATE TABLE `sys_user`  (
   `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `deleted_at` datetime NULL DEFAULT NULL COMMENT '删除时间',
   `open_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '微信open id',
+  `iuqt_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT '' COMMENT 'IUQT ID',
+  `user_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '用户类型(1:服务提供商,2:展商)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `user_login`(`user_name`, `deleted_at`) USING BTREE,
   UNIQUE INDEX `mobile`(`mobile`, `deleted_at`) USING BTREE,
   INDEX `user_nickname`(`user_nickname`) USING BTREE,
-  INDEX `open_id`(`open_id`) USING BTREE
+  INDEX `open_id`(`open_id`) USING BTREE,
+  UNIQUE INDEX `iuqt_id`(`iuqt_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 44 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户表' ROW_FORMAT = COMPACT;
+
+ALTER TABLE `sys_user` ADD COLUMN `iuqt_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT '' COMMENT 'IUQT ID' AFTER `open_id`;
+ALTER TABLE `sys_user` ADD COLUMN `user_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '用户类型(1:服务提供商,2:展商)' AFTER `iuqt_id`;
 
 -- ----------------------------
 -- Records of sys_user
